@@ -51,6 +51,16 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
     en ticker **o** nombre. Excluye instrumentos `MONEDA` (el cash no es un activo operable). Los comodines de `LIKE`
     (`%`, `_`) se escapan. Resultados ordenados por ticker, sin paginación (66 instrumentos). Con un universo mayor,
     se agregaría un índice GIN con `pg_trgm` y paginación.
+12. **Portfolio**:
+    - `totalValue` = pesos según órdenes `FILLED` (incluye los reservados por órdenes `NEW`, que siguen siendo del
+      usuario) + valor de mercado de las posiciones. `availableCash` = pesos − reservados.
+    - Costo promedio ponderado: las compras suman su monto al costo; las ventas lo reducen en proporción a las
+      acciones vendidas. Rendimiento total = (valor de mercado − costo) / costo.
+    - Posiciones con cantidad 0 no se muestran. Si un activo no tiene cotización, `lastPrice`, `marketValue` y los
+      rendimientos son `null` y la posición no suma al total.
+    - Una posición negativa (BMA del usuario 1) se muestra con su valor negativo y sin rendimiento total.
+    - Montos y porcentajes con 2 decimales, redondeo `HALF_UP`. El cálculo se hace en memoria sobre las órdenes del
+      usuario (índice `orders (userid, status)`): simple y suficiente para el volumen esperado por usuario.
 
 ## Iteraciones
 
