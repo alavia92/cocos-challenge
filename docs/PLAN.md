@@ -47,6 +47,10 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
 8. **Transferencias** (`CASH_IN` / `CASH_OUT`): se consideran en los cálculos, sin endpoint propio (fuera del alcance pedido).
 9. **Cambios de esquema** con Flyway en modo `baselineOnMigrate` sobre la base existente, versionados y justificados en el README.
 10. **Base de pruebas**: Testcontainers (PostgreSQL real con el mismo esquema y datos semilla). Nunca contra Neon.
+11. **Búsqueda de instrumentos**: un único parámetro `query` que se busca como substring, sin distinguir mayúsculas,
+    en ticker **o** nombre. Excluye instrumentos `MONEDA` (el cash no es un activo operable). Los comodines de `LIKE`
+    (`%`, `_`) se escapan. Resultados ordenados por ticker, sin paginación (66 instrumentos). Con un universo mayor,
+    se agregaría un índice GIN con `pg_trgm` y paginación.
 
 ## Iteraciones
 
