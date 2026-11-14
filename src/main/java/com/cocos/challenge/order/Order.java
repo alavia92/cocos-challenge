@@ -54,6 +54,18 @@ public class Order {
 	protected Order() {
 	}
 
+	public Order(User user, Instrument instrument, OrderSide side, OrderType type, int size, BigDecimal price,
+			OrderStatus status, LocalDateTime datetime) {
+		this.user = user;
+		this.instrument = instrument;
+		this.side = side;
+		this.type = type;
+		this.size = size;
+		this.price = price;
+		this.status = status;
+		this.datetime = datetime;
+	}
+
 	public Integer getId() {
 		return id;
 	}

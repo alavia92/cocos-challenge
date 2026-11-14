@@ -61,6 +61,20 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
     - Una posición negativa (BMA del usuario 1) se muestra con su valor negativo y sin rendimiento total.
     - Montos y porcentajes con 2 decimales, redondeo `HALF_UP`. El cálculo se hace en memoria sobre las órdenes del
       usuario (índice `orders (userid, status)`): simple y suficiente para el volumen esperado por usuario.
+13. **Envío de órdenes** (`POST /api/orders`):
+    - Errores de request → 400 con el detalle por campo en `errors`: falta un campo obligatorio, `side` distinto de
+      `BUY`/`SELL`, no se envía exactamente uno de `quantity`/`amount`, `price` ausente en `LIMIT` o presente en
+      `MARKET`, valores no positivos o con más de 2 decimales. Usuario o instrumento inexistente → 404. Instrumento
+      `MONEDA` → 400 (los pesos no se compran ni venden; las transferencias son `CASH_IN`/`CASH_OUT`).
+    - Una orden válida se registra siempre y se responde 201, incluso si queda `REJECTED`.
+    - Precio: `MARKET` usa el último `close`; `LIMIT` usa el precio límite (también para calcular la cantidad cuando
+      se envía `amount`).
+    - Se rechaza (`REJECTED`) si: la compra supera los pesos disponibles (se permite igualarlos); la venta supera las
+      acciones disponibles (descontando las reservadas por ventas `NEW`); la cantidad calculada por monto es 0; o es
+      `MARKET` sobre un instrumento sin cotización (se registra con `price` nulo).
+    - El usuario se bloquea con `SELECT … FOR UPDATE` durante la transacción; `OrderConcurrencyTests` verifica que
+      dos órdenes simultáneas no puedan gastar los mismos pesos.
+    - No se persiste el motivo del rechazo (el esquema no tiene columna para eso); sería una mejora posible.
 
 ## Iteraciones
 
