@@ -2,16 +2,15 @@ package com.cocos.challenge.instrument;
 
 import java.util.List;
 
-import jakarta.validation.constraints.NotBlank;
+import com.cocos.challenge.api.InstrumentsApi;
+import com.cocos.challenge.api.model.InstrumentDto;
+import com.cocos.challenge.api.model.InstrumentTypeDto;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/instruments")
-public class InstrumentController {
+public class InstrumentController implements InstrumentsApi {
 
 	private final InstrumentService instrumentService;
 
@@ -22,9 +21,14 @@ public class InstrumentController {
 	/**
 	 * Busca activos por ticker y/o nombre: devuelve los que contengan {@code query} en cualquiera de los dos.
 	 */
-	@GetMapping
-	public List<InstrumentResponse> search(@RequestParam @NotBlank String query) {
-		return instrumentService.search(query).stream().map(InstrumentResponse::from).toList();
+	@Override
+	public ResponseEntity<List<InstrumentDto>> searchInstruments(String query) {
+		return ResponseEntity.ok(instrumentService.search(query).stream().map(InstrumentController::toDto).toList());
+	}
+
+	private static InstrumentDto toDto(Instrument instrument) {
+		return new InstrumentDto(instrument.getId(), instrument.getTicker(), instrument.getName(),
+				InstrumentTypeDto.valueOf(instrument.getType().name()));
 	}
 
 }

@@ -4,12 +4,14 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
+ * Portfolio de un usuario valuado a los últimos precios.
+ *
  * @param totalValue valor total de la cuenta: pesos (incluidos los reservados por órdenes pendientes) más el valor de
  * mercado de las posiciones
  * @param availableCash pesos disponibles para operar
  */
-public record PortfolioResponse(Integer userId, String accountNumber, BigDecimal totalValue, BigDecimal availableCash,
-		List<PositionResponse> positions) {
+public record Portfolio(Integer userId, String accountNumber, BigDecimal totalValue, BigDecimal availableCash,
+		List<PositionValue> positions) {
 
 	/**
 	 * @param lastPrice último precio ({@code close}); {@code null} si el activo no tiene cotizaciones
@@ -19,7 +21,7 @@ public record PortfolioResponse(Integer userId, String accountNumber, BigDecimal
 	 * @param dailyReturnPercent variación del día ({@code close} vs {@code previousClose}); {@code null} si no hay
 	 * cotización
 	 */
-	public record PositionResponse(Integer instrumentId, String ticker, String name, int quantity,
+	public record PositionValue(Integer instrumentId, String ticker, String name, int quantity,
 			BigDecimal lastPrice, BigDecimal marketValue, BigDecimal totalReturnPercent,
 			BigDecimal dailyReturnPercent) {
 

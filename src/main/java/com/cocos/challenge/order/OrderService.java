@@ -55,7 +55,7 @@ public class OrderService {
 	 * </ul>
 	 */
 	@Transactional
-	public Order submit(OrderRequest request) {
+	public Order submit(OrderCommand request) {
 		// Bloquea al usuario hasta el commit: la validación de fondos y el alta de la orden son atómicas
 		User user = userRepository.findByIdForUpdate(request.userId())
 			.orElseThrow(() -> notFound("User %d not found".formatted(request.userId())));
@@ -101,7 +101,7 @@ public class OrderService {
 	 * Cantidad de acciones de la orden: la indicada, o la máxima cantidad entera que cubre el monto al precio de la
 	 * orden. Es 0 si no hay precio para calcularla.
 	 */
-	private static int size(OrderRequest request, BigDecimal price) {
+	private static int size(OrderCommand request, BigDecimal price) {
 		if (request.quantity() != null) {
 			return request.quantity();
 		}

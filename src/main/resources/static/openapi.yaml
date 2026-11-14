@@ -1,0 +1,318 @@
+openapi: 3.0.3
+info:
+  title: Cocos Challenge API
+  description: |
+    Portfolio de un usuario, búsqueda de activos y envío y cancelación de órdenes.
+
+    Los errores se devuelven en formato RFC 9457 (`application/problem+json`). Los de validación incluyen el detalle de
+    cada campo en `errors`.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Portfolio
+  - name: Instruments
+  - name: Orders
+
+paths:
+  /api/users/{userId}/portfolio:
+    get:
+      tags: [Portfolio]
+      operationId: getPortfolio
+      summary: Valor total de la cuenta, pesos disponibles y posiciones
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Portfolio del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/instruments:
+    get:
+      tags: [Instruments]
+      operationId: searchInstruments
+      summary: Búsqueda de activos por ticker y/o nombre
+      description: |
+        Devuelve los activos cuyo ticker o nombre contenga `query`, sin distinguir mayúsculas, ordenados por ticker.
+        Excluye los instrumentos `MONEDA`.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          x-field-extra-annotation: '@jakarta.validation.constraints.NotBlank'
+      responses:
+        '200':
+          description: Activos encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instrument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/orders:
+    post:
+      tags: [Orders]
+      operationId: submitOrder
+      summary: Envío de una orden de compra o venta
+      description: |
+        La orden se registra siempre, también cuando es rechazada: el resultado se informa en `status`.
+
+        - `MARKET`: se ejecuta al último precio y queda `FILLED`.
+        - `LIMIT`: se registra al precio límite y queda `NEW`.
+        - Queda `REJECTED` si no hay pesos o acciones suficientes, si el monto no alcanza para una acción o si es
+          `MARKET` sobre un instrumento sin cotización.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Orden registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/orders/{orderId}/cancel:
+    post:
+      tags: [Orders]
+      operationId: cancelOrder
+      summary: Cancelación de una orden NEW
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Orden cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: La orden no está en estado `NEW`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  responses:
+    BadRequest:
+      description: Request inválida
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Recurso inexistente
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Portfolio:
+      type: object
+      required: [userId, accountNumber, totalValue, availableCash, positions]
+      properties:
+        userId:
+          type: integer
+          format: int32
+        accountNumber:
+          type: string
+        totalValue:
+          type: number
+          description: Pesos (incluidos los reservados por órdenes pendientes) más el valor de mercado de las posiciones
+        availableCash:
+          type: number
+          description: Pesos disponibles para operar
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+
+    Position:
+      type: object
+      required: [instrumentId, ticker, name, quantity]
+      properties:
+        instrumentId:
+          type: integer
+          format: int32
+        ticker:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        lastPrice:
+          type: number
+          nullable: true
+          description: Último precio (`close`); `null` si el activo no tiene cotizaciones
+        marketValue:
+          type: number
+          nullable: true
+          description: Valor de la posición al último precio; `null` si no hay cotización
+        totalReturnPercent:
+          type: number
+          nullable: true
+          description: |
+            Rendimiento total respecto del costo promedio de compra; `null` si no se puede calcular (sin cotización o
+            posición inconsistente)
+        dailyReturnPercent:
+          type: number
+          nullable: true
+          description: Variación del día (`close` vs `previousClose`); `null` si no hay cotización
+
+    Instrument:
+      type: object
+      required: [id, ticker, name, type]
+      properties:
+        id:
+          type: integer
+          format: int32
+        ticker:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/InstrumentType'
+
+    InstrumentType:
+      type: string
+      enum: [ACCIONES, MONEDA]
+
+    OrderRequest:
+      type: object
+      description: |
+        Orden enviada al mercado. El tamaño se indica con `quantity` (acciones) o con `amount` (monto en pesos a
+        invertir), exactamente uno de los dos. `price` es obligatorio en `LIMIT` y no se admite en `MARKET`.
+      x-class-extra-annotation: '@com.cocos.challenge.order.ValidOrderRequest'
+      required: [userId, instrumentId, side, type]
+      properties:
+        userId:
+          type: integer
+          format: int32
+        instrumentId:
+          type: integer
+          format: int32
+        side:
+          $ref: '#/components/schemas/TradeSide'
+        type:
+          $ref: '#/components/schemas/OrderType'
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Cantidad exacta de acciones
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: Monto en pesos (hasta 2 decimales); se envía la máxima cantidad de acciones enteras que cubre
+          x-field-extra-annotation: '@jakarta.validation.constraints.Digits(integer = 12, fraction = 2)'
+        price:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: Precio límite (hasta 2 decimales)
+          x-field-extra-annotation: '@jakarta.validation.constraints.Digits(integer = 8, fraction = 2)'
+
+    Order:
+      type: object
+      required: [id, userId, instrumentId, ticker, side, type, size, status, datetime]
+      properties:
+        id:
+          type: integer
+          format: int32
+        userId:
+          type: integer
+          format: int32
+        instrumentId:
+          type: integer
+          format: int32
+        ticker:
+          type: string
+        side:
+          $ref: '#/components/schemas/OrderSide'
+        type:
+          $ref: '#/components/schemas/OrderType'
+        size:
+          type: integer
+          format: int32
+        price:
+          type: number
+          nullable: true
+          description: Precio de la orden; `null` si es `MARKET` sobre un instrumento sin cotización
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        datetime:
+          type: string
+          format: date-time
+          description: Hora local del servidor, sin zona horaria
+
+    TradeSide:
+      type: string
+      description: Lado de una orden enviada por la API
+      enum: [BUY, SELL]
+
+    OrderSide:
+      type: string
+      description: Lado de una orden registrada; `CASH_IN` y `CASH_OUT` son transferencias de pesos
+      enum: [BUY, SELL, CASH_IN, CASH_OUT]
+
+    OrderType:
+      type: string
+      enum: [MARKET, LIMIT]
+
+    OrderStatus:
+      type: string
+      enum: [NEW, FILLED, REJECTED, CANCELLED]
+
+    Problem:
+      type: object
+      description: Error en formato RFC 9457
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: array
+          description: Errores de validación, uno por campo
+          items:
+            type: string

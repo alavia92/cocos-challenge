@@ -1,12 +1,18 @@
 package com.cocos.challenge.common;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
 
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,6 +50,26 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 				.map(message -> result.getMethodParameter().getParameterName() + ": " + message))
 			.toList();
 		return handleExceptionInternal(ex, invalidRequest(ex.getBody(), errors), headers, status, request);
+	}
+
+	/**
+	 * Un valor que no se puede convertir al tipo del campo (por ejemplo, un {@code side} fuera del enum del contrato)
+	 * se informa como error de ese campo.
+	 */
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		if (!(ex.getCause() instanceof DatabindException cause) || cause.getPath().isEmpty()) {
+			return super.handleHttpMessageNotReadable(ex, headers, status, request);
+		}
+		String field = cause.getPath()
+			.stream()
+			.map(JacksonException.Reference::getPropertyName)
+			.filter(Objects::nonNull)
+			.collect(Collectors.joining("."));
+		ProblemDetail body = createProblemDetail(ex, status, "Failed to read request", null, null, request);
+		return handleExceptionInternal(ex, invalidRequest(body, List.of(field + ": invalid value")), headers, status,
+				request);
 	}
 
 	private static ProblemDetail invalidRequest(ProblemDetail body, List<String> errors) {

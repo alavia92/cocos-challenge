@@ -43,7 +43,7 @@ class OrderConcurrencyTests {
 		jdbcTemplate.update("""
 				INSERT INTO orders (instrumentid, userid, size, price, type, side, status, datetime)
 				VALUES (66, ?, 1000, 1, 'MARKET', 'CASH_IN', 'FILLED', now())""", USER_ID);
-		OrderRequest buy = new OrderRequest(USER_ID, 47, OrderSide.BUY, OrderType.LIMIT, 1, null,
+		OrderCommand buy = new OrderCommand(USER_ID, 47, OrderSide.BUY, OrderType.LIMIT, 1, null,
 				BigDecimal.valueOf(600));
 
 		CountDownLatch start = new CountDownLatch(1);

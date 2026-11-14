@@ -15,7 +15,7 @@ import com.cocos.challenge.marketdata.MarketDataRepository;
 import com.cocos.challenge.order.OrderRepository;
 import com.cocos.challenge.order.OrderStatus;
 import com.cocos.challenge.portfolio.Holdings.Position;
-import com.cocos.challenge.portfolio.PortfolioResponse.PositionResponse;
+import com.cocos.challenge.portfolio.Portfolio.PositionValue;
 import com.cocos.challenge.user.User;
 import com.cocos.challenge.user.UserRepository;
 
@@ -43,7 +43,7 @@ public class PortfolioService {
 	}
 
 	@Transactional(readOnly = true)
-	public PortfolioResponse getPortfolio(Integer userId) {
+	public Portfolio getPortfolio(Integer userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User %d not found".formatted(userId)));
 		Holdings holdings = loadHoldings(userId);
@@ -54,16 +54,16 @@ public class PortfolioService {
 			.stream()
 			.collect(Collectors.toMap(m -> m.getInstrument().getId(), Function.identity()));
 
-		List<PositionResponse> positions = openPositions.stream()
-			.map(p -> toResponse(p, latestPrices.get(p.getInstrument().getId())))
-			.sorted(Comparator.comparing(PositionResponse::ticker))
+		List<PositionValue> positions = openPositions.stream()
+			.map(p -> toPositionValue(p, latestPrices.get(p.getInstrument().getId())))
+			.sorted(Comparator.comparing(PositionValue::ticker))
 			.toList();
 		BigDecimal totalValue = positions.stream()
-			.map(PositionResponse::marketValue)
+			.map(PositionValue::marketValue)
 			.filter(Objects::nonNull)
 			.reduce(holdings.getCash(), BigDecimal::add);
 
-		return new PortfolioResponse(user.getId(), user.getAccountNumber(), money(totalValue),
+		return new Portfolio(user.getId(), user.getAccountNumber(), money(totalValue),
 				money(holdings.getAvailableCash()), positions);
 	}
 
@@ -73,7 +73,7 @@ public class PortfolioService {
 		return Holdings.of(orderRepository.findByUserIdAndStatusIn(userId, EnumSet.of(OrderStatus.FILLED, OrderStatus.NEW)));
 	}
 
-	private static PositionResponse toResponse(Position position, MarketData marketData) {
+	private static PositionValue toPositionValue(Position position, MarketData marketData) {
 		BigDecimal lastPrice = null;
 		BigDecimal marketValue = null;
 		BigDecimal totalReturn = null;
@@ -86,7 +86,7 @@ public class PortfolioService {
 				totalReturn = percentChange(position.getCost(), marketValue);
 			}
 		}
-		return new PositionResponse(position.getInstrument().getId(), position.getInstrument().getTicker(),
+		return new PositionValue(position.getInstrument().getId(), position.getInstrument().getTicker(),
 				position.getInstrument().getName(), position.getQuantity(), lastPrice, marketValue, totalReturn,
 				dailyReturn);
 	}

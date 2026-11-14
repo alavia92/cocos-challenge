@@ -9,6 +9,7 @@ de un usuario, búsqueda de activos y envío y cancelación de órdenes.
 - Spring Boot 4.1 (Web MVC, Data JPA, Validation)
 - PostgreSQL (base provista por el challenge) + Flyway
 - Testcontainers para tests de integración
+- OpenAPI 3 + OpenAPI Generator (enfoque API-first)
 
 ## Requisitos
 
@@ -54,8 +55,15 @@ de los datos provistos (`src/test/resources/db/seed`). Nunca tocan la base real.
 | `OrderCancellationTests` | Cancelación de órdenes `NEW` y rechazo para los demás estados |
 | `PortfolioControllerTests` | Valores exactos del portfolio (cash, reservas, costo promedio, rendimientos) |
 | `InstrumentControllerTests` | Búsqueda por ticker y/o nombre |
+| `OpenApiSpecTests` | El contrato OpenAPI se publica en `/openapi.yaml` |
 
 ## API
+
+El contrato está definido en OpenAPI 3 en [`src/main/resources/static/openapi.yaml`](src/main/resources/static/openapi.yaml)
+y la app lo publica en `http://localhost:8080/openapi.yaml`. Es la fuente de verdad de la API (enfoque *API-first*):
+en cada build, `openapi-generator-maven-plugin` genera a partir de él las interfaces de los controllers y los DTOs
+(`com.cocos.challenge.api`, en `target/generated-sources/openapi`), y los controllers las implementan. Para cambiar la
+API se modifica el contrato y se recompila.
 
 Ejemplos listos para ejecutar en [`http/cocos-api.http`](http/cocos-api.http) (IntelliJ HTTP Client / VS Code REST
 Client). Los errores se devuelven en formato RFC 9457 (`application/problem+json`); los de validación incluyen el
@@ -210,6 +218,14 @@ Todo se calcula a partir de la tabla `orders`, usando la columna `size`:
 - **Sin autenticación**, como indica el challenge: el usuario se indica en la URL o en el body, y no se valida que
   quien cancela una orden sea su dueño.
 - **Montos** con `BigDecimal` en todo el cálculo; nunca `double`.
+- **OpenAPI (API-first)**: el contrato se escribe a mano y el código se genera de él, y no al revés, para que la API
+  se diseñe y revise antes de implementarla y no pueda divergir de su documentación. Se generan solo interfaces
+  (`interfaceOnly`) y DTOs como records (sufijo `Dto`, para no chocar con las entidades y enums del dominio); los
+  controllers mapean entre DTOs y dominio, de modo que servicios y entidades no dependen del código generado.
+- **Validaciones que el contrato no expresa** (exactamente uno de `quantity` / `amount`; `price` solo en `LIMIT`; 2
+  decimales en montos) se agregan al DTO generado con las extensiones `x-class-extra-annotation` y
+  `x-field-extra-annotation`. Un valor que no se puede convertir al tipo del campo (por ejemplo un `side` fuera de
+  `BUY` / `SELL`) se informa como error de ese campo.
 - **Base de tests**: Testcontainers con PostgreSQL real, no H2, para probar el mismo motor que producción (bloqueos,
   `numeric`, `LIKE`).
 
@@ -228,6 +244,7 @@ esquema original como *baseline* (versión 1) y aplica solo las migraciones post
 
 ```
 src/main/java/com/cocos/challenge
+├── api/           (generado) Interfaces y DTOs a partir del contrato OpenAPI
 ├── common/        Manejo de errores de la API
 ├── instrument/    Instrumentos y búsqueda
 ├── marketdata/    Cotizaciones
@@ -236,7 +253,7 @@ src/main/java/com/cocos/challenge
 └── user/          Usuarios
 ```
 
-Cada paquete agrupa su entidad, repositorio, servicio, controller y DTOs.
+Cada paquete agrupa su entidad, repositorio, servicio y controller. Los DTOs de la API se generan del contrato.
 
 ## Posibles mejoras
 
@@ -244,4 +261,4 @@ Cada paquete agrupa su entidad, repositorio, servicio, controller y DTOs.
 - Endpoints para consultar órdenes (`GET /api/orders/{id}`, órdenes de un usuario) y para transferencias de pesos.
 - Búsqueda con índice GIN (`pg_trgm`) y paginación si crece el universo de instrumentos.
 - Autenticación, para que cada usuario solo opere y consulte su propia cuenta.
-- Documentación OpenAPI.
+- Swagger UI sobre el contrato publicado.

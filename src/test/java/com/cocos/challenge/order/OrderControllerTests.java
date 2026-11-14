@@ -214,15 +214,16 @@ class OrderControllerTests {
 
 	@ParameterizedTest
 	@CsvSource(delimiter = '|', textBlock = """
-			"side": "CASH_IN", "type": "MARKET", "quantity": 1                  | tradeSide: must be BUY or SELL
-			"side": "BUY", "type": "MARKET"                                     | sizeSpecified: exactly one of quantity or amount must be provided
-			"side": "BUY", "type": "MARKET", "quantity": 1, "amount": 100       | sizeSpecified: exactly one of quantity or amount must be provided
-			"side": "BUY", "type": "LIMIT", "quantity": 1                       | priceConsistentWithType: price is required for LIMIT orders and not allowed for MARKET orders
-			"side": "BUY", "type": "MARKET", "quantity": 1, "price": 100        | priceConsistentWithType: price is required for LIMIT orders and not allowed for MARKET orders
-			"side": "BUY", "type": "MARKET", "quantity": 0                      | quantity: must be greater than 0
+			"side": "CASH_IN", "type": "MARKET", "quantity": 1                  | side: invalid value
+			"side": "BUY", "type": "MARKET"                                     | exactly one of quantity or amount must be provided
+			"side": "BUY", "type": "MARKET", "quantity": 1, "amount": 100       | exactly one of quantity or amount must be provided
+			"side": "BUY", "type": "LIMIT", "quantity": 1                       | price: required for LIMIT orders and not allowed for MARKET orders
+			"side": "BUY", "type": "MARKET", "quantity": 1, "price": 100        | price: required for LIMIT orders and not allowed for MARKET orders
+			"side": "BUY", "type": "MARKET", "quantity": 0                      | quantity: must be greater than or equal to 1
 			"side": "BUY", "type": "MARKET", "amount": -5                       | amount: must be greater than 0
 			"side": "BUY", "type": "LIMIT", "quantity": 1, "price": 10.123      | price: numeric value out of bounds (<8 digits>.<2 digits> expected)
 			"type": "MARKET", "quantity": 1                                     | side: must not be null
+			"side": "BUY", "type": "MARKET", "quantity": "abc"                  | quantity: invalid value
 			""")
 	void invalidRequestIsBadRequest(String fields, String expectedError) {
 		MvcTestResult result = submit("""
