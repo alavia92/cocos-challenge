@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.cocos.challenge.api.InstrumentsApi;
 import com.cocos.challenge.api.model.InstrumentDto;
-import com.cocos.challenge.api.model.InstrumentTypeDto;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,8 +13,11 @@ public class InstrumentController implements InstrumentsApi {
 
 	private final InstrumentService instrumentService;
 
-	public InstrumentController(InstrumentService instrumentService) {
+	private final InstrumentMapper instrumentMapper;
+
+	public InstrumentController(InstrumentService instrumentService, InstrumentMapper instrumentMapper) {
 		this.instrumentService = instrumentService;
+		this.instrumentMapper = instrumentMapper;
 	}
 
 	/**
@@ -23,12 +25,7 @@ public class InstrumentController implements InstrumentsApi {
 	 */
 	@Override
 	public ResponseEntity<List<InstrumentDto>> searchInstruments(String query) {
-		return ResponseEntity.ok(instrumentService.search(query).stream().map(InstrumentController::toDto).toList());
-	}
-
-	private static InstrumentDto toDto(Instrument instrument) {
-		return new InstrumentDto(instrument.getId(), instrument.getTicker(), instrument.getName(),
-				InstrumentTypeDto.valueOf(instrument.getType().name()));
+		return ResponseEntity.ok(instrumentMapper.toDtos(instrumentService.search(query)));
 	}
 
 }

@@ -10,6 +10,7 @@ de un usuario, búsqueda de activos y envío y cancelación de órdenes.
 - PostgreSQL (base provista por el challenge) + Flyway
 - Testcontainers para tests de integración
 - OpenAPI 3 + OpenAPI Generator (enfoque API-first)
+- MapStruct para la conversión entre DTOs y dominio
 
 ## Requisitos
 
@@ -221,7 +222,11 @@ Todo se calcula a partir de la tabla `orders`, usando la columna `size`:
 - **OpenAPI (API-first)**: el contrato se escribe a mano y el código se genera de él, y no al revés, para que la API
   se diseñe y revise antes de implementarla y no pueda divergir de su documentación. Se generan solo interfaces
   (`interfaceOnly`) y DTOs como records (sufijo `Dto`, para no chocar con las entidades y enums del dominio); los
-  controllers mapean entre DTOs y dominio, de modo que servicios y entidades no dependen del código generado.
+  controllers convierten entre DTOs y dominio, de modo que servicios y entidades no dependen del código generado.
+- **Mappers con MapStruct** (`OrderMapper`, `InstrumentMapper`, `PortfolioMapper`): la conversión se genera al compilar,
+  sin reflexión. Está configurado para que un campo del DTO sin origen sea un error de compilación, y los enums se
+  convierten por nombre con chequeo en compilación: un cambio en el contrato que el dominio no contempla rompe el
+  build en lugar de llegar a producción.
 - **Validaciones que el contrato no expresa** (exactamente uno de `quantity` / `amount`; `price` solo en `LIMIT`; 2
   decimales en montos) se agregan al DTO generado con las extensiones `x-class-extra-annotation` y
   `x-field-extra-annotation`. Un valor que no se puede convertir al tipo del campo (por ejemplo un `side` fuera de
@@ -253,7 +258,8 @@ src/main/java/com/cocos/challenge
 └── user/          Usuarios
 ```
 
-Cada paquete agrupa su entidad, repositorio, servicio y controller. Los DTOs de la API se generan del contrato.
+Cada paquete agrupa su entidad, repositorio, servicio, controller y mapper. Los DTOs de la API se generan del
+contrato.
 
 ## Posibles mejoras
 
