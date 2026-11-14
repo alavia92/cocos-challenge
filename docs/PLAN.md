@@ -75,6 +75,14 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
     - El usuario se bloquea con `SELECT … FOR UPDATE` durante la transacción; `OrderConcurrencyTests` verifica que
       dos órdenes simultáneas no puedan gastar los mismos pesos.
     - No se persiste el motivo del rechazo (el esquema no tiene columna para eso); sería una mejora posible.
+14. **Cancelación de órdenes** (`POST /api/orders/{id}/cancel`):
+    - Solo órdenes `NEW` → pasan a `CANCELLED` y liberan los pesos o acciones reservados. Cualquier otro estado → 409
+      con el estado actual en el detalle; orden inexistente → 404.
+    - Se modela como acción (`POST …/cancel`) y no como `DELETE`, porque la orden no se borra: cambia de estado y
+      queda en el historial.
+    - La fila de la orden se bloquea (`SELECT … FOR UPDATE`): dos cancelaciones simultáneas no pueden pasar ambas.
+    - Sin autenticación (fuera del alcance), no se valida que quien cancela sea el dueño de la orden. No se registra
+      la fecha de cancelación (`datetime` conserva la fecha de envío).
 
 ## Iteraciones
 

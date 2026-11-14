@@ -3,6 +3,7 @@ package com.cocos.challenge.order;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,14 @@ public class OrderController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public OrderResponse submit(@Valid @RequestBody OrderRequest request) {
 		return OrderResponse.from(orderService.submit(request));
+	}
+
+	/**
+	 * Cancela una orden. Solo se pueden cancelar las órdenes {@code NEW}; para cualquier otro estado responde 409.
+	 */
+	@PostMapping("/{orderId}/cancel")
+	public OrderResponse cancel(@PathVariable Integer orderId) {
+		return OrderResponse.from(orderService.cancel(orderId));
 	}
 
 }

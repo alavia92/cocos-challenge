@@ -66,6 +66,16 @@ public class Order {
 		this.datetime = datetime;
 	}
 
+	/**
+	 * Cancela la orden. Solo se pueden cancelar las órdenes pendientes ({@code NEW}).
+	 */
+	public void cancel() {
+		if (status != OrderStatus.NEW) {
+			throw new IllegalStateException("Order %d is %s; only NEW orders can be cancelled".formatted(id, status));
+		}
+		status = OrderStatus.CANCELLED;
+	}
+
 	public Integer getId() {
 		return id;
 	}

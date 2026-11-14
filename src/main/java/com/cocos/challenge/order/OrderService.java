@@ -75,6 +75,21 @@ public class OrderService {
 				LocalDateTime.now()));
 	}
 
+	/**
+	 * Cancela una orden pendiente ({@code NEW}), liberando los pesos o acciones que reservaba.
+	 */
+	@Transactional
+	public Order cancel(Integer orderId) {
+		Order order = orderRepository.findByIdForUpdate(orderId)
+			.orElseThrow(() -> notFound("Order %d not found".formatted(orderId)));
+		if (order.getStatus() != OrderStatus.NEW) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Order %d is %s; only NEW orders can be cancelled".formatted(orderId, order.getStatus()));
+		}
+		order.cancel();
+		return order;
+	}
+
 	/** Último precio del instrumento, o {@code null} si no tiene cotizaciones. */
 	private BigDecimal lastPrice(Instrument instrument) {
 		return marketDataRepository.findFirstByInstrumentIdOrderByDateDesc(instrument.getId())

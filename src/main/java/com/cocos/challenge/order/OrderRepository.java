@@ -2,8 +2,12 @@ package com.cocos.challenge.order;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
@@ -16,5 +20,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 			where o.user.id = :userId and o.status in :statuses
 			order by o.datetime, o.id""")
 	List<Order> findByUserIdAndStatusIn(Integer userId, Collection<OrderStatus> statuses);
+
+	/**
+	 * Obtiene la orden con su instrumento, bloqueando su fila ({@code SELECT ... FOR UPDATE}) hasta el fin de la
+	 * transacción.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select o from Order o join fetch o.instrument where o.id = :id")
+	Optional<Order> findByIdForUpdate(Integer id);
 
 }
