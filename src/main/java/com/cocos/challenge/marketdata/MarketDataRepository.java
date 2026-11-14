@@ -1,0 +1,7 @@
+package com.cocos.challenge.marketdata;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MarketDataRepository extends JpaRepository<MarketData, Integer> {
+
+}
