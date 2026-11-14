@@ -60,7 +60,11 @@ class InstrumentControllerTests {
 
 	@Test
 	void rejectsBlankQuery() {
-		assertThat(mvc.get().uri("/api/instruments").param("query", " ")).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(mvc.get().uri("/api/instruments").param("query", " ")).hasStatus(HttpStatus.BAD_REQUEST)
+			.bodyJson()
+			.extractingPath("$.errors")
+			.asArray()
+			.containsExactly("query: must not be blank");
 	}
 
 	@Test

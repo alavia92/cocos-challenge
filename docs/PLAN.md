@@ -2,6 +2,9 @@
 
 Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iterativa.
 
+> **Estado: completado.** Este documento registra el plan y las decisiones a medida que se tomaron. La documentación
+> final y consolidada (API, modelo de cálculo, supuestos y decisiones) está en el [README](../README.md).
+
 ## Estado de la base de datos provista
 
 - Tablas `users`, `instruments`, `orders`, `marketdata`, con columnas en minúscula
@@ -86,7 +89,7 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
 
 ## Iteraciones
 
-Cada iteración termina con un commit.
+Cada iteración terminó con un commit.
 
 1. **Modelo y datos de prueba**: entidades JPA validadas contra el esquema real, enums, repositories, Flyway con índices,
    infraestructura de tests con esquema y datos semilla.

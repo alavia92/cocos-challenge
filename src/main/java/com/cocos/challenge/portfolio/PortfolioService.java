@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,7 +60,7 @@ public class PortfolioService {
 			.toList();
 		BigDecimal totalValue = positions.stream()
 			.map(PositionResponse::marketValue)
-			.filter(v -> v != null)
+			.filter(Objects::nonNull)
 			.reduce(holdings.getCash(), BigDecimal::add);
 
 		return new PortfolioResponse(user.getId(), user.getAccountNumber(), money(totalValue),
