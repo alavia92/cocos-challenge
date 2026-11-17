@@ -1,0 +1,33 @@
+# Entorno autocontenido: la API más un PostgreSQL 18 con el esquema y una copia de los datos provistos.
+# No usa la base del challenge ni el archivo .env.
+services:
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: cocos
+      POSTGRES_USER: cocos
+      POSTGRES_PASSWORD: cocos
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cocos -d cocos"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/cocos
+      DB_USERNAME: cocos
+      DB_PASSWORD: cocos
+      # Las órdenes se registran en hora local (columna timestamp sin zona), como los datos provistos
+      TZ: America/Argentina/Buenos_Aires
+      # Base vacía: esquema original + datos semilla (los mismos de los tests) + migraciones posteriores
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,filesystem:/seed
+    volumes:
+      - ./src/test/resources/db/seed:/seed:ro
+    ports:
+      - "8080:8080"

@@ -15,11 +15,26 @@ de un usuario, búsqueda de activos y envío y cancelación de órdenes.
 
 ## Requisitos
 
-- JDK 25
-- Acceso a la base PostgreSQL del challenge
-- Docker (para los tests, que levantan un PostgreSQL con Testcontainers)
+- Docker
+- JDK 25, solo para ejecutar sin Docker o correr los tests (que levantan un PostgreSQL con Testcontainers)
 
 ## Ejecución
+
+### Con Docker (autocontenido)
+
+```bash
+docker compose up --build
+```
+
+Levanta la API y un PostgreSQL 18 propio. Flyway crea el esquema y carga una copia de los datos provistos (los
+mismos que usan los tests); no se necesita la base del challenge ni credenciales. Para empezar de cero con los datos
+originales:
+
+```bash
+docker compose down -v
+```
+
+### Contra la base del challenge
 
 Las credenciales se leen de variables de entorno o de un archivo `.env` en la raíz (no versionado):
 
@@ -33,14 +48,11 @@ DB_PASSWORD=<password>
 ./mvnw spring-boot:run
 ```
 
-La API queda en `http://localhost:8080`, y se puede probar desde Swagger UI en
-`http://localhost:8080/swagger-ui.html`. Al arrancar, Flyway aplica las migraciones pendientes sobre la base.
+Al arrancar, Flyway aplica las migraciones pendientes sobre la base. También se puede levantar la app contra una base
+efímera de Testcontainers, sin Docker Compose: `./mvnw spring-boot:test-run`.
 
-Para levantar la app contra una base efímera con una copia de los datos provistos (sin tocar la base real):
-
-```bash
-./mvnw spring-boot:test-run
-```
+En todos los casos la API queda en `http://localhost:8080`, y se puede probar desde Swagger UI en
+`http://localhost:8080/swagger-ui.html`.
 
 ## Tests
 
@@ -257,48 +269,22 @@ esquema original como *baseline* (versión 1) y aplica solo las migraciones post
 
 ## Estructura
 
-Paquetes por funcionalidad y, dentro de cada uno, por capa:
+Paquetes por funcionalidad (`instrument`, `marketdata`, `order`, `portfolio`, `user`) y, dentro de cada uno, por capa:
 
 ```
-src/main/java/com/cocos/challenge
-├── openapi/          (generado) Interfaces y DTOs a partir del contrato OpenAPI
-├── common/
-│   └── api/              Manejo de errores de la API
-├── instrument/
-│   ├── api/              InstrumentController, InstrumentMapper
-│   ├── application/      InstrumentService (búsqueda)
-│   ├── domain/           Instrument, InstrumentType
-│   └── persistence/      InstrumentRepository
-├── marketdata/
-│   ├── domain/           MarketData
-│   └── persistence/      MarketDataRepository
-├── order/
-│   ├── api/              OrderController, OrderMapper, validación del request
-│   ├── application/      OrderService (envío y cancelación), OrderCommand
-│   ├── domain/           Order, OrderSide, OrderType, OrderStatus
-│   └── persistence/      OrderRepository
-├── portfolio/
-│   ├── api/              PortfolioController, PortfolioMapper
-│   ├── application/      PortfolioService
-│   └── domain/           Holdings (cálculo de tenencias), Portfolio
-└── user/
-    ├── domain/           User
-    └── persistence/      UserRepository
+com.cocos.challenge
+├── openapi/          (generado) Interfaces y DTOs del contrato OpenAPI
+├── common/api/       Manejo de errores de la API
+└── <funcionalidad>/
+    ├── api/          Controllers, mappers y validación del request
+    ├── application/  Servicios (casos de uso)
+    ├── domain/       Entidades, enums y lógica de negocio
+    └── persistence/  Repositorios
 ```
 
-| Capa | Contiene | Depende de |
-|---|---|---|
-| `api` | Controllers que implementan las interfaces generadas, mappers DTO ↔ dominio y validaciones del request | `application`, `domain`, `openapi` |
-| `application` | Casos de uso (servicios transaccionales) y sus datos de entrada | `persistence`, `domain` |
-| `persistence` | Repositorios Spring Data | `domain` |
-| `domain` | Entidades, enums y lógica de negocio (`Holdings`, `Order.cancel()`) | otros `domain` |
-
-Las dependencias van siempre hacia abajo: ninguna capa importa de una capa superior.
-
-Las entidades JPA están en `domain` y no en `persistence`: son a la vez el modelo de dominio (tienen comportamiento,
-como `Order.cancel()`, y `Holdings` calcula sobre ellas). Llevarlas a `persistence` haría que `domain` dependa de
-`persistence`, o exigiría duplicar el modelo (entidades JPA + objetos de dominio + mappers), que no se justifica con
-cuatro entidades.
+Las dependencias van hacia abajo (`api` → `application` → `persistence` → `domain`). Las entidades JPA están en
+`domain` porque son también el modelo de dominio (por ejemplo `Order.cancel()`), y separarlas exigiría duplicar el
+modelo.
 
 ## Posibles mejoras
 

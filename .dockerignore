@@ -1,0 +1,10 @@
+# Credenciales de la base real: nunca deben llegar a la imagen
+.env
+
+target/
+.git/
+.idea/
+*.iml
+.DS_Store
+docs/
+http/
