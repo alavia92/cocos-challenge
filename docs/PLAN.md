@@ -4,6 +4,11 @@ Plan para resolver el [backend-challenge](../backend-challenge.md) de forma iter
 
 > **Estado: completado.** Este documento registra el plan y las decisiones a medida que se tomaron. La documentación
 > final y consolidada (API, modelo de cálculo, supuestos y decisiones) está en el [README](../README.md).
+>
+> Después se refactorizó el proyecto: contrato OpenAPI con código generado, MapStruct, Lombok, paquetes por capa
+> (`api`, `application`, `domain`, `persistence`), excepciones propias en lugar de `ResponseStatusException`, Swagger UI
+> y Docker Compose. Lo que este plan dice sobre la estructura de paquetes y los DTOs ya no aplica; el README describe el
+> estado actual.
 
 ## Estado de la base de datos provista
 

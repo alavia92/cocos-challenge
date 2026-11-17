@@ -69,11 +69,14 @@ public class Order {
 	}
 
 	/**
-	 * Cancela la orden. Solo se pueden cancelar las órdenes pendientes ({@code NEW}).
+	 * Cancela la orden.
+	 *
+	 * @throws OrderNotCancellableException si la orden no está pendiente ({@code NEW})
 	 */
 	public void cancel() {
 		if (status != OrderStatus.NEW) {
-			throw new IllegalStateException("Order %d is %s; only NEW orders can be cancelled".formatted(id, status));
+			throw new OrderNotCancellableException(
+					"Order %d is %s; only NEW orders can be cancelled".formatted(id, status));
 		}
 		status = OrderStatus.CANCELLED;
 	}

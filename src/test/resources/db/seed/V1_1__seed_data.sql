@@ -1,4 +1,5 @@
--- Copia de los datos provistos por el challenge, solo para tests.
+-- Copia de los datos provistos por el challenge, para bases locales vacías: los tests (Testcontainers) y el entorno
+-- Docker Compose. Nunca se aplica sobre la base real: solo se incluye en las ubicaciones de Flyway de esos entornos.
 
 INSERT INTO users (id, email, accountnumber) VALUES
     (1, 'emiliano@test.com', '10001'),

@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.cocos.challenge.common.application.NotFoundException;
 import com.cocos.challenge.marketdata.domain.MarketData;
 import com.cocos.challenge.marketdata.persistence.MarketDataRepository;
 import com.cocos.challenge.order.domain.OrderStatus;
@@ -21,10 +22,8 @@ import com.cocos.challenge.portfolio.domain.Portfolio.PositionValue;
 import com.cocos.challenge.user.domain.User;
 import com.cocos.challenge.user.persistence.UserRepository;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PortfolioService {
@@ -47,7 +46,7 @@ public class PortfolioService {
 	@Transactional(readOnly = true)
 	public Portfolio getPortfolio(Integer userId) {
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User %d not found".formatted(userId)));
+			.orElseThrow(() -> new NotFoundException("User %d not found".formatted(userId)));
 		Holdings holdings = loadHoldings(userId);
 
 		List<Position> openPositions = holdings.getPositions().stream().filter(p -> p.getQuantity() != 0).toList();

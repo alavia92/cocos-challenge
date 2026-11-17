@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
+import com.cocos.challenge.common.application.NotFoundException;
 import com.cocos.challenge.instrument.domain.Instrument;
 import com.cocos.challenge.instrument.domain.InstrumentType;
 import com.cocos.challenge.instrument.persistence.InstrumentRepository;
@@ -20,10 +21,8 @@ import com.cocos.challenge.portfolio.domain.Holdings.Position;
 import com.cocos.challenge.user.domain.User;
 import com.cocos.challenge.user.persistence.UserRepository;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class OrderService {
@@ -63,11 +62,11 @@ public class OrderService {
 	public Order submit(OrderCommand request) {
 		// Bloquea al usuario hasta el commit: la validación de fondos y el alta de la orden son atómicas
 		User user = userRepository.findByIdForUpdate(request.userId())
-			.orElseThrow(() -> notFound("User %d not found".formatted(request.userId())));
+			.orElseThrow(() -> new NotFoundException("User %d not found".formatted(request.userId())));
 		Instrument instrument = instrumentRepository.findById(request.instrumentId())
-			.orElseThrow(() -> notFound("Instrument %d not found".formatted(request.instrumentId())));
+			.orElseThrow(() -> new NotFoundException("Instrument %d not found".formatted(request.instrumentId())));
 		if (instrument.getType() == InstrumentType.MONEDA) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+			throw new InstrumentNotTradeableException(
 					"Instrument %s is a currency and cannot be traded".formatted(instrument.getTicker()));
 		}
 
@@ -82,15 +81,14 @@ public class OrderService {
 
 	/**
 	 * Cancela una orden pendiente ({@code NEW}), liberando los pesos o acciones que reservaba.
+	 *
+	 * @throws NotFoundException si la orden no existe
+	 * @throws com.cocos.challenge.order.domain.OrderNotCancellableException si la orden no está {@code NEW}
 	 */
 	@Transactional
 	public Order cancel(Integer orderId) {
 		Order order = orderRepository.findByIdForUpdate(orderId)
-			.orElseThrow(() -> notFound("Order %d not found".formatted(orderId)));
-		if (order.getStatus() != OrderStatus.NEW) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-					"Order %d is %s; only NEW orders can be cancelled".formatted(orderId, order.getStatus()));
-		}
+			.orElseThrow(() -> new NotFoundException("Order %d not found".formatted(orderId)));
 		order.cancel();
 		return order;
 	}
@@ -126,10 +124,6 @@ public class OrderService {
 			case SELL -> size <= holdings.getPosition(instrument.getId()).map(Position::getAvailableQuantity).orElse(0);
 			default -> throw new IllegalArgumentException("Unsupported order side " + side);
 		};
-	}
-
-	private static ResponseStatusException notFound(String detail) {
-		return new ResponseStatusException(HttpStatus.NOT_FOUND, detail);
 	}
 
 }

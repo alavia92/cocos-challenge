@@ -249,6 +249,10 @@ Todo se calcula a partir de la tabla `orders`, usando la columna `size`:
   (`/v3/api-docs`), lo que dejaría dos contratos que pueden divergir. En su lugar, una página estática
   (`static/swagger-ui.html`) carga Swagger UI desde su WebJar y muestra `/openapi.yaml`. El contrato declara un
   servidor relativo (`/`), para que "Try it out" funcione en cualquier host y puerto.
+- **Errores sin HTTP en el dominio**: `application` y `domain` lanzan excepciones propias (`NotFoundException`,
+  `InstrumentNotTradeableException`, `OrderNotCancellableException`) y la capa `api` las traduce a 404, 400 y 409
+  (`ApiExceptionHandler`, `OrderExceptionHandler`). La regla de que solo se cancelan órdenes `NEW` vive en
+  `Order.cancel()`.
 - **Validaciones que el contrato no expresa** (exactamente uno de `quantity` / `amount`; `price` solo en `LIMIT`; 2
   decimales en montos) se agregan al DTO generado con las extensiones `x-class-extra-annotation` y
   `x-field-extra-annotation`. Un valor que no se puede convertir al tipo del campo (por ejemplo un `side` fuera de
@@ -274,7 +278,7 @@ Paquetes por funcionalidad (`instrument`, `marketdata`, `order`, `portfolio`, `u
 ```
 com.cocos.challenge
 ├── openapi/          (generado) Interfaces y DTOs del contrato OpenAPI
-├── common/api/       Manejo de errores de la API
+├── common/           Excepciones comunes y su traducción a errores HTTP
 └── <funcionalidad>/
     ├── api/          Controllers, mappers y validación del request
     ├── application/  Servicios (casos de uso)
