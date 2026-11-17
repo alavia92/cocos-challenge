@@ -13,12 +13,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Cotización diaria de un instrumento. {@code close} es el último precio.
  */
 @Entity
 @Table(name = "marketdata")
+@Getter
+@NoArgsConstructor
 public class MarketData {
 
 	@Id
@@ -41,40 +46,5 @@ public class MarketData {
 	private BigDecimal previousClose;
 
 	private LocalDate date;
-
-	protected MarketData() {
-	}
-
-	public Integer getId() {
-		return id;
-	}
-
-	public Instrument getInstrument() {
-		return instrument;
-	}
-
-	public BigDecimal getHigh() {
-		return high;
-	}
-
-	public BigDecimal getLow() {
-		return low;
-	}
-
-	public BigDecimal getOpen() {
-		return open;
-	}
-
-	public BigDecimal getClose() {
-		return close;
-	}
-
-	public BigDecimal getPreviousClose() {
-		return previousClose;
-	}
-
-	public LocalDate getDate() {
-		return date;
-	}
 
 }

@@ -7,9 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "instruments")
+@Getter
+@NoArgsConstructor
 public class Instrument {
 
 	@Id
@@ -22,24 +27,5 @@ public class Instrument {
 
 	@Enumerated(EnumType.STRING)
 	private InstrumentType type;
-
-	protected Instrument() {
-	}
-
-	public Integer getId() {
-		return id;
-	}
-
-	public String getTicker() {
-		return ticker;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public InstrumentType getType() {
-		return type;
-	}
 
 }

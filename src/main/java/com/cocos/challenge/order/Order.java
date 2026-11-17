@@ -15,6 +15,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Orden de compra/venta de un instrumento o transferencia de pesos ({@code CASH_IN} / {@code CASH_OUT}).
@@ -22,6 +25,8 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "orders")
+@Getter
+@NoArgsConstructor
 public class Order {
 
 	@Id
@@ -51,9 +56,6 @@ public class Order {
 
 	private LocalDateTime datetime;
 
-	protected Order() {
-	}
-
 	public Order(User user, Instrument instrument, OrderSide side, OrderType type, int size, BigDecimal price,
 			OrderStatus status, LocalDateTime datetime) {
 		this.user = user;
@@ -74,42 +76,6 @@ public class Order {
 			throw new IllegalStateException("Order %d is %s; only NEW orders can be cancelled".formatted(id, status));
 		}
 		status = OrderStatus.CANCELLED;
-	}
-
-	public Integer getId() {
-		return id;
-	}
-
-	public Instrument getInstrument() {
-		return instrument;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public Integer getSize() {
-		return size;
-	}
-
-	public BigDecimal getPrice() {
-		return price;
-	}
-
-	public OrderType getType() {
-		return type;
-	}
-
-	public OrderSide getSide() {
-		return side;
-	}
-
-	public OrderStatus getStatus() {
-		return status;
-	}
-
-	public LocalDateTime getDatetime() {
-		return datetime;
 	}
 
 }

@@ -6,9 +6,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor
 public class User {
 
 	@Id
@@ -19,20 +24,5 @@ public class User {
 
 	@Column(name = "accountnumber")
 	private String accountNumber;
-
-	protected User() {
-	}
-
-	public Integer getId() {
-		return id;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public String getAccountNumber() {
-		return accountNumber;
-	}
 
 }

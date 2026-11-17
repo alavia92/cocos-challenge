@@ -11,6 +11,7 @@ de un usuario, búsqueda de activos y envío y cancelación de órdenes.
 - Testcontainers para tests de integración
 - OpenAPI 3 + OpenAPI Generator (enfoque API-first)
 - MapStruct para la conversión entre DTOs y dominio
+- Lombok para los getters de las entidades
 
 ## Requisitos
 
@@ -227,6 +228,9 @@ Todo se calcula a partir de la tabla `orders`, usando la columna `size`:
   sin reflexión. Está configurado para que un campo del DTO sin origen sea un error de compilación, y los enums se
   convierten por nombre con chequeo en compilación: un cambio en el contrato que el dominio no contempla rompe el
   build en lugar de llegar a producción.
+- **Lombok, acotado**: en las entidades JPA solo `@Getter` y `@NoArgsConstructor(access = PROTECTED)`. Sin setters
+  (el estado cambia solo por métodos de negocio, como `Order.cancel()`), ni `@Data`, `@EqualsAndHashCode` o
+  `@ToString`, que en entidades JPA comparan o recorren relaciones `LAZY`.
 - **Validaciones que el contrato no expresa** (exactamente uno de `quantity` / `amount`; `price` solo en `LIMIT`; 2
   decimales en montos) se agregan al DTO generado con las extensiones `x-class-extra-annotation` y
   `x-field-extra-annotation`. Un valor que no se puede convertir al tipo del campo (por ejemplo un `side` fuera de
