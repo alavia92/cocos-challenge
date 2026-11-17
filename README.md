@@ -51,8 +51,14 @@ DB_PASSWORD=<password>
 Al arrancar, Flyway aplica las migraciones pendientes sobre la base. También se puede levantar la app contra una base
 efímera de Testcontainers, sin Docker Compose: `./mvnw spring-boot:test-run`.
 
-En todos los casos la API queda en `http://localhost:8080`, y se puede probar desde Swagger UI en
-`http://localhost:8080/swagger-ui.html`.
+### URLs
+
+Con la app levantada, en cualquiera de los modos:
+
+| | URL |
+|---|---|
+| Swagger UI (probar la API desde el navegador) | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) |
+| API | `http://localhost:8080/api/...` |
 
 ## Tests
 
@@ -74,98 +80,21 @@ de los datos provistos (`src/test/resources/db/seed`). Nunca tocan la base real.
 
 ## API
 
-El contrato está definido en OpenAPI 3 en [`src/main/resources/static/openapi.yaml`](src/main/resources/static/openapi.yaml)
-y la app lo publica en `http://localhost:8080/openapi.yaml`. [Swagger UI](http://localhost:8080/swagger-ui.html)
-muestra ese mismo contrato y permite ejecutar los endpoints. Es la fuente de verdad de la API (enfoque *API-first*):
-en cada build, `openapi-generator-maven-plugin` genera a partir de él las interfaces de los controllers y los DTOs
-(`com.cocos.challenge.openapi`, en `target/generated-sources/openapi`), y los controllers las implementan. Para cambiar la
-API se modifica el contrato y se recompila.
+El contrato está definido en OpenAPI 3 en [`openapi.yaml`](src/main/resources/static/openapi.yaml) y es la fuente de
+verdad de la API (enfoque *API-first*): en cada build, `openapi-generator-maven-plugin` genera a partir de él las
+interfaces de los controllers y los DTOs (`com.cocos.challenge.openapi`), y los controllers las implementan. Para
+cambiar la API se modifica el contrato y se recompila.
 
-Ejemplos listos para ejecutar en [`http/cocos-api.http`](http/cocos-api.http) (IntelliJ HTTP Client / VS Code REST
-Client). Los errores se devuelven en formato RFC 9457 (`application/problem+json`); los de validación incluyen el
-detalle por campo en `errors`.
+| Método | Ruta | Descripción | Respuestas |
+|---|---|---|---|
+| `GET` | `/api/users/{userId}/portfolio` | Valor total de la cuenta, pesos disponibles y posiciones | 200, 404 |
+| `GET` | `/api/instruments?query={texto}` | Búsqueda de activos por ticker y/o nombre | 200, 400 |
+| `POST` | `/api/orders` | Envío de una orden de compra o venta | 201 (también si queda `REJECTED`), 400, 404 |
+| `POST` | `/api/orders/{orderId}/cancel` | Cancelación de una orden `NEW` | 200, 404, 409 |
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/users/{userId}/portfolio` | Valor total de la cuenta, pesos disponibles y posiciones |
-| `GET` | `/api/instruments?query={texto}` | Búsqueda de activos por ticker y/o nombre |
-| `POST` | `/api/orders` | Envío de una orden de compra o venta |
-| `POST` | `/api/orders/{orderId}/cancel` | Cancelación de una orden `NEW` |
-
-### Portfolio
-
-```http
-GET /api/users/1/portfolio
-```
-
-```json
-{
-  "userId": 1,
-  "accountNumber": "10001",
-  "totalValue": 889756.00,
-  "availableCash": 627500.00,
-  "positions": [
-    {
-      "instrumentId": 47,
-      "ticker": "PAMP",
-      "name": "Pampa Holding S.A.",
-      "quantity": 40,
-      "lastPrice": 925.85,
-      "marketValue": 37034.00,
-      "totalReturnPercent": -0.45,
-      "dailyReturnPercent": 0.44
-    }
-  ]
-}
-```
-
-(Se muestra una sola posición por brevedad.) Usuario inexistente → 404.
-
-### Búsqueda de activos
-
-```http
-GET /api/instruments?query=banco
-```
-
-```json
-[
-  {"id": 22, "ticker": "BBAR", "name": "Banco Frances", "type": "ACCIONES"},
-  {"id": 28, "ticker": "BHIP", "name": "Banco Hipotecario S.A.", "type": "ACCIONES"},
-  {"id": 31, "ticker": "BMA", "name": "Banco Macro S.A.", "type": "ACCIONES"},
-  {"id": 19, "ticker": "BPAT", "name": "Banco Patagonia", "type": "ACCIONES"}
-]
-```
-
-`query` vacío o ausente → 400.
-
-### Envío de órdenes
-
-```http
-POST /api/orders
-Content-Type: application/json
-
-{"userId": 1, "instrumentId": 47, "side": "BUY", "type": "MARKET", "quantity": 10}
-```
-
-| Campo | Descripción |
-|---|---|
-| `userId`, `instrumentId` | Obligatorios |
-| `side` | `BUY` o `SELL` |
-| `type` | `MARKET` o `LIMIT` |
-| `quantity` | Cantidad de acciones. Exactamente uno de `quantity` / `amount` |
-| `amount` | Monto en pesos; se envía la máxima cantidad de acciones enteras que cubre |
-| `price` | Precio límite: obligatorio en `LIMIT`, no admitido en `MARKET` |
-
-Responde **201** con la orden registrada (`id`, `size`, `price`, `status`, `datetime`, …), también cuando queda
-`REJECTED`. Request inválida → 400; usuario o instrumento inexistente → 404; instrumento `MONEDA` → 400.
-
-### Cancelación de órdenes
-
-```http
-POST /api/orders/5/cancel
-```
-
-Responde 200 con la orden en estado `CANCELLED`. Si la orden no está `NEW` → 409; si no existe → 404.
+Los campos, esquemas y ejemplos de cada endpoint están en [Swagger UI](http://localhost:8080/swagger-ui.html), desde
+donde también se pueden ejecutar. Los errores se devuelven en formato RFC 9457 (`application/problem+json`); los de
+validación incluyen el detalle por campo en `errors`.
 
 ## Modelo de cálculo
 
