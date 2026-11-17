@@ -8,7 +8,8 @@ info:
     cada campo en `errors`.
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
+  - url: /
+    description: Mismo servidor que sirve el contrato
 tags:
   - name: Portfolio
   - name: Instruments

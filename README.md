@@ -33,7 +33,8 @@ DB_PASSWORD=<password>
 ./mvnw spring-boot:run
 ```
 
-La API queda en `http://localhost:8080`. Al arrancar, Flyway aplica las migraciones pendientes sobre la base.
+La API queda en `http://localhost:8080`, y se puede probar desde Swagger UI en
+`http://localhost:8080/swagger-ui.html`. Al arrancar, Flyway aplica las migraciones pendientes sobre la base.
 
 Para levantar la app contra una base efímera con una copia de los datos provistos (sin tocar la base real):
 
@@ -57,12 +58,13 @@ de los datos provistos (`src/test/resources/db/seed`). Nunca tocan la base real.
 | `OrderCancellationTests` | Cancelación de órdenes `NEW` y rechazo para los demás estados |
 | `PortfolioControllerTests` | Valores exactos del portfolio (cash, reservas, costo promedio, rendimientos) |
 | `InstrumentControllerTests` | Búsqueda por ticker y/o nombre |
-| `OpenApiSpecTests` | El contrato OpenAPI se publica en `/openapi.yaml` |
+| `OpenApiSpecTests` | El contrato OpenAPI se publica en `/openapi.yaml` y Swagger UI en `/swagger-ui.html` |
 
 ## API
 
 El contrato está definido en OpenAPI 3 en [`src/main/resources/static/openapi.yaml`](src/main/resources/static/openapi.yaml)
-y la app lo publica en `http://localhost:8080/openapi.yaml`. Es la fuente de verdad de la API (enfoque *API-first*):
+y la app lo publica en `http://localhost:8080/openapi.yaml`. [Swagger UI](http://localhost:8080/swagger-ui.html)
+muestra ese mismo contrato y permite ejecutar los endpoints. Es la fuente de verdad de la API (enfoque *API-first*):
 en cada build, `openapi-generator-maven-plugin` genera a partir de él las interfaces de los controllers y los DTOs
 (`com.cocos.challenge.openapi`, en `target/generated-sources/openapi`), y los controllers las implementan. Para cambiar la
 API se modifica el contrato y se recompila.
@@ -231,6 +233,10 @@ Todo se calcula a partir de la tabla `orders`, usando la columna `size`:
 - **Lombok, acotado**: en las entidades JPA solo `@Getter` y `@NoArgsConstructor(access = PROTECTED)`. Sin setters
   (el estado cambia solo por métodos de negocio, como `Order.cancel()`), ni `@Data`, `@EqualsAndHashCode` o
   `@ToString`, que en entidades JPA comparan o recorren relaciones `LAZY`.
+- **Swagger UI sin springdoc**: springdoc solo sirve la UI si además genera su propio spec a partir del código
+  (`/v3/api-docs`), lo que dejaría dos contratos que pueden divergir. En su lugar, una página estática
+  (`static/swagger-ui.html`) carga Swagger UI desde su WebJar y muestra `/openapi.yaml`. El contrato declara un
+  servidor relativo (`/`), para que "Try it out" funcione en cualquier host y puerto.
 - **Validaciones que el contrato no expresa** (exactamente uno de `quantity` / `amount`; `price` solo en `LIMIT`; 2
   decimales en montos) se agregan al DTO generado con las extensiones `x-class-extra-annotation` y
   `x-field-extra-annotation`. Un valor que no se puede convertir al tipo del campo (por ejemplo un `side` fuera de
@@ -300,4 +306,3 @@ cuatro entidades.
 - Endpoints para consultar órdenes (`GET /api/orders/{id}`, órdenes de un usuario) y para transferencias de pesos.
 - Búsqueda con índice GIN (`pg_trgm`) y paginación si crece el universo de instrumentos.
 - Autenticación, para que cada usuario solo opere y consulte su propia cuenta.
-- Swagger UI sobre el contrato publicado.
