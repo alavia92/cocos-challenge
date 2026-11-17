@@ -1,6 +1,8 @@
 package com.cocos.challenge.order;
 
 import com.cocos.challenge.IntegrationTest;
+import com.cocos.challenge.order.domain.OrderStatus;
+import com.cocos.challenge.order.persistence.OrderRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

@@ -64,7 +64,7 @@ de los datos provistos (`src/test/resources/db/seed`). Nunca tocan la base real.
 El contrato está definido en OpenAPI 3 en [`src/main/resources/static/openapi.yaml`](src/main/resources/static/openapi.yaml)
 y la app lo publica en `http://localhost:8080/openapi.yaml`. Es la fuente de verdad de la API (enfoque *API-first*):
 en cada build, `openapi-generator-maven-plugin` genera a partir de él las interfaces de los controllers y los DTOs
-(`com.cocos.challenge.api`, en `target/generated-sources/openapi`), y los controllers las implementan. Para cambiar la
+(`com.cocos.challenge.openapi`, en `target/generated-sources/openapi`), y los controllers las implementan. Para cambiar la
 API se modifica el contrato y se recompila.
 
 Ejemplos listos para ejecutar en [`http/cocos-api.http`](http/cocos-api.http) (IntelliJ HTTP Client / VS Code REST
@@ -251,19 +251,48 @@ esquema original como *baseline* (versión 1) y aplica solo las migraciones post
 
 ## Estructura
 
+Paquetes por funcionalidad y, dentro de cada uno, por capa:
+
 ```
 src/main/java/com/cocos/challenge
-├── api/           (generado) Interfaces y DTOs a partir del contrato OpenAPI
-├── common/        Manejo de errores de la API
-├── instrument/    Instrumentos y búsqueda
-├── marketdata/    Cotizaciones
-├── order/         Envío y cancelación de órdenes
-├── portfolio/     Cálculo de tenencias (Holdings) y portfolio
-└── user/          Usuarios
+├── openapi/          (generado) Interfaces y DTOs a partir del contrato OpenAPI
+├── common/
+│   └── api/              Manejo de errores de la API
+├── instrument/
+│   ├── api/              InstrumentController, InstrumentMapper
+│   ├── application/      InstrumentService (búsqueda)
+│   ├── domain/           Instrument, InstrumentType
+│   └── persistence/      InstrumentRepository
+├── marketdata/
+│   ├── domain/           MarketData
+│   └── persistence/      MarketDataRepository
+├── order/
+│   ├── api/              OrderController, OrderMapper, validación del request
+│   ├── application/      OrderService (envío y cancelación), OrderCommand
+│   ├── domain/           Order, OrderSide, OrderType, OrderStatus
+│   └── persistence/      OrderRepository
+├── portfolio/
+│   ├── api/              PortfolioController, PortfolioMapper
+│   ├── application/      PortfolioService
+│   └── domain/           Holdings (cálculo de tenencias), Portfolio
+└── user/
+    ├── domain/           User
+    └── persistence/      UserRepository
 ```
 
-Cada paquete agrupa su entidad, repositorio, servicio, controller y mapper. Los DTOs de la API se generan del
-contrato.
+| Capa | Contiene | Depende de |
+|---|---|---|
+| `api` | Controllers que implementan las interfaces generadas, mappers DTO ↔ dominio y validaciones del request | `application`, `domain`, `openapi` |
+| `application` | Casos de uso (servicios transaccionales) y sus datos de entrada | `persistence`, `domain` |
+| `persistence` | Repositorios Spring Data | `domain` |
+| `domain` | Entidades, enums y lógica de negocio (`Holdings`, `Order.cancel()`) | otros `domain` |
+
+Las dependencias van siempre hacia abajo: ninguna capa importa de una capa superior.
+
+Las entidades JPA están en `domain` y no en `persistence`: son a la vez el modelo de dominio (tienen comportamiento,
+como `Order.cancel()`, y `Holdings` calcula sobre ellas). Llevarlas a `persistence` haría que `domain` dependa de
+`persistence`, o exigiría duplicar el modelo (entidades JPA + objetos de dominio + mappers), que no se justifica con
+cuatro entidades.
 
 ## Posibles mejoras
 

@@ -9,6 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import com.cocos.challenge.IntegrationTest;
+import com.cocos.challenge.order.application.OrderCommand;
+import com.cocos.challenge.order.application.OrderService;
+import com.cocos.challenge.order.domain.OrderSide;
+import com.cocos.challenge.order.domain.OrderStatus;
+import com.cocos.challenge.order.domain.OrderType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.RepeatedTest;
 

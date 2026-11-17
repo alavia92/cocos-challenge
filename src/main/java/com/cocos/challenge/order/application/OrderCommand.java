@@ -1,0 +1,19 @@
+package com.cocos.challenge.order.application;
+
+import java.math.BigDecimal;
+
+import com.cocos.challenge.order.domain.OrderSide;
+import com.cocos.challenge.order.domain.OrderType;
+
+/**
+ * Orden a enviar al mercado, ya validada. El tamaño se indica con {@code quantity} (acciones) o con {@code amount}
+ * (monto en pesos a invertir), uno de los dos.
+ *
+ * @param quantity cantidad exacta de acciones
+ * @param amount monto en pesos; se envía la cantidad máxima de acciones enteras que cubre
+ * @param price precio límite; solo en órdenes {@code LIMIT}
+ */
+public record OrderCommand(Integer userId, Integer instrumentId, OrderSide side, OrderType type, Integer quantity,
+		BigDecimal amount, BigDecimal price) {
+
+}

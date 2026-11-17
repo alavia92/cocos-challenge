@@ -143,8 +143,8 @@
 						<configuration>
 							<inputSpec>${project.basedir}/src/main/resources/static/openapi.yaml</inputSpec>
 							<generatorName>spring</generatorName>
-							<apiPackage>com.cocos.challenge.api</apiPackage>
-							<modelPackage>com.cocos.challenge.api.model</modelPackage>
+							<apiPackage>com.cocos.challenge.openapi</apiPackage>
+							<modelPackage>com.cocos.challenge.openapi.model</modelPackage>
 							<modelNameSuffix>Dto</modelNameSuffix>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<generateApiTests>false</generateApiTests>

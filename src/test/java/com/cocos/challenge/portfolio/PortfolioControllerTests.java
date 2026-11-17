@@ -1,6 +1,8 @@
 package com.cocos.challenge.portfolio;
 
 import com.cocos.challenge.IntegrationTest;
+import com.cocos.challenge.portfolio.application.PortfolioService;
+import com.cocos.challenge.portfolio.domain.Holdings;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;

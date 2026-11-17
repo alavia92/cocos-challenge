@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.cocos.challenge.IntegrationTest;
+import com.cocos.challenge.order.domain.Order;
+import com.cocos.challenge.order.domain.OrderSide;
+import com.cocos.challenge.order.domain.OrderStatus;
+import com.cocos.challenge.order.domain.OrderType;
+import com.cocos.challenge.order.persistence.OrderRepository;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;

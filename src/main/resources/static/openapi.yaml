@@ -214,7 +214,7 @@ components:
       description: |
         Orden enviada al mercado. El tamaño se indica con `quantity` (acciones) o con `amount` (monto en pesos a
         invertir), exactamente uno de los dos. `price` es obligatorio en `LIMIT` y no se admite en `MARKET`.
-      x-class-extra-annotation: '@com.cocos.challenge.order.ValidOrderRequest'
+      x-class-extra-annotation: '@com.cocos.challenge.order.api.ValidOrderRequest'
       required: [userId, instrumentId, side, type]
       properties:
         userId:
